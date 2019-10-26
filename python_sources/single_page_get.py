@@ -202,12 +202,16 @@ def write_to_history(vote_num, vote_tupe):
 # for i in range(31):
 #     print(",".join(vote_senator_table_history[i]))
 
-from node import SenatorVoteNode
+from node import SenatorNode
 
 SenateNode = SenatorNode("Senate to voting record", get_senators(), 0)
+#
+# print(SenateNode.get_csv())
+# for i in range(1, 11):
+#     vote = votes_from_url(url_base + get_vote_ext_from_num(i))
+#     SenateNode.add_vote(i, vote)
+#     print(SenateNode.get_csv())
 
+vote = votes_from_url(url_base + get_vote_ext_from_num(1))
+SenateNode.add_vote(1, vote)
 print(SenateNode.get_csv())
-for i in range(1, 6):
-    vote = votes_from_url(url_base + get_vote_ext_from_num(i))
-    SenateNode.add_vote(i, vote)
-    print(SenateNode.get_csv())

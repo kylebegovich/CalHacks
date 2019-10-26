@@ -57,7 +57,7 @@ class SenatorNode(Node):
         self.csv += (",".join(vote_line) + "\n")
 
 
-class Node(Node):
+class VoteNode(Node):
     def __init__(self, title, senators, max_vote_index):
         self.title = title
         self.data = dict([(s, {}) for s in senators])  # maps of senator names to vote_id: vote map
