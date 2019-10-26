@@ -1,5 +1,5 @@
 import urllib.request
-
+import us
 
 url_stripped = "https://www.senate.gov/legislative/LIS/roll_call_lists/roll_call_vote_cfm.cfm"
 current_session_url_ext = "?congress=116&session=1"
@@ -136,7 +136,8 @@ def get_senators():
     return senators[1:]
 
 def get_state_from_senator(senator):
-    return senator[-3:-1]
+    state_code = senator[-3:-1]
+    return str(us.states.lookup(state_code).name)
 
 table_map = {}
 
