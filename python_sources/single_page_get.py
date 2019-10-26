@@ -80,6 +80,12 @@ def get_miss(filtered_lines, index):
     return miss
 
 def parse_ynm(lines, filter_lines):
+    if len(filter_lines) == 3:
+        yeas = get_yeas(filter_lines, 0)
+        nays = get_nays(filter_lines, 1)
+        miss = get_miss(filter_lines, 2)
+        return yeas, nays, miss
+
     is_yeas = False
     is_nays = False
     is_miss = False
@@ -113,11 +119,6 @@ def parse_ynm(lines, filter_lines):
 def votes_from_url(url):
     lines = fetch_page_as_lines(url)
     filter_lines = filter_feed(lines)
-    if len(filter_lines) == 3:
-        yeas = get_yeas(filter_lines, 0)
-        nays = get_nays(filter_lines, 1)
-        miss = get_miss(filter_lines, 2)
-        return yeas, nays, miss
     return parse_ynm(lines, filter_lines)
 
 def get_senators():
@@ -194,12 +195,19 @@ def write_to_history(vote_num, vote_tupe):
 # # print()
 # # print_sen_history()
 # print_sen_history_csv()
-
 # [print(l) for l in vote_senator_table_history]
 
-for i in range(1, 31):
-    vote = votes_from_url(url_base + get_vote_ext_from_num(i))
-    write_to_history(i, vote)
 
-for i in range(31):
-    print(",".join(vote_senator_table_history[i]))
+#
+# for i in range(31):
+#     print(",".join(vote_senator_table_history[i]))
+
+from node import SenatorVoteNode
+
+SenatorNode = SenatorVoteNode("Senate to voting record", get_senators(), 0)
+
+print(SenatorNode.get_csv())
+for i in range(1, 6):
+    vote = votes_from_url(url_base + get_vote_ext_from_num(i))
+    SenatorNode.add_vote(i, vote)
+    print(SenatorNode.get_csv())
