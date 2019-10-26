@@ -137,7 +137,7 @@ def get_senators():
 
 def get_state_from_senator(senator):
     state_code = senator[-3:-1]
-    return str(us.states.lookup(state_code).name)
+    return str(us.states.lookup(state_code).fips)
 
 table_map = {}
 
