@@ -209,6 +209,11 @@ def write_to_history(vote_num, vote_tupe):
     vote_senator_table_history.append(list_to_append)
 
 
+def write_to_file(file_name, file_contents):
+    fd = open(file_name, 'w+')
+    fd.write(file_contents)
+    fd.close()
+
 # vote = votes_from_url(url_base + get_vote_ext_from_num(125))
 # write_to_history(125, vote)
 #
@@ -251,12 +256,16 @@ def write_to_history(vote_num, vote_tupe):
 
 # print()
 
-vote = votes_from_url(url_base + get_vote_ext_from_num(1))
 # print_vote("Vote 1:", vote)
-write_to_history(1, vote)
-# print(vote_state_history)
-# print()
-# print(vote_state_history[1])
-# print()
-print("state,color")
-[print(line) for line in get_state_color_map_from_vote(1)]
+
+file_prefix = "../csvs/vote_"
+file_suffix = "_colors.csv"
+
+for i in range(31, 51):
+    file_name = file_prefix + str(i) + file_suffix
+
+    vote = votes_from_url(url_base + get_vote_ext_from_num(i))
+    write_to_history(i, vote)
+    output = "state,color\n" + "\n".join(get_state_color_map_from_vote(i))
+
+    write_to_file(file_name, output)
