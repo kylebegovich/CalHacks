@@ -164,21 +164,21 @@ def write_to_vote_state_history(vote_num, vote_tupe):
             continue
         state = get_state_from_senator(yea_voter)
         if state not in state_votes:
-            state_votes[state] = 2
+            state_votes[state] = float(2)
         state_votes[state] += 1
     for nay_voter in vote_tupe[1]:
         if nay_voter == "":
             continue
         state = get_state_from_senator(nay_voter)
         if state not in state_votes:
-            state_votes[state] = 2
+            state_votes[state] = float(2)
         state_votes[state] -= 1
     for missed_voter in vote_tupe[2]:
         if missed_voter == "":
             continue
         state = get_state_from_senator(missed_voter)
         if state not in state_votes:
-            state_votes[state] = 2
+            state_votes[state] = float(2)
 
     vote_state_history[vote_num] = state_votes
 
