@@ -257,4 +257,5 @@ write_to_history(1, vote)
 # print()
 # print(vote_state_history[1])
 # print()
+print("state,color")
 [print(line) for line in get_state_color_map_from_vote(1)]
