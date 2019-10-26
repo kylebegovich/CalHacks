@@ -47,6 +47,8 @@ def print_sen_history():
         print("miss")
         [print(vote) for vote in v["miss"]]
 
+def get_state_color_map_from_vote(vote_num):
+    return [(k + "," + v) for k, v in vote_state_history[vote_num].items()]
 
 def fetch_page_as_lines(url):
     fp = urllib.request.urlopen(url)
@@ -133,6 +135,8 @@ def get_senators():
     senators = sorted(list(set(senators)))
     return senators[1:]
 
+def get_state_from_senator(senator):
+    return senator[-3:-1]
 
 table_map = {}
 
@@ -149,11 +153,46 @@ def init_table():
 
 
 vote_history = {}  # ex: 125: {"yeas": ["sen1"], "nays": ["sen2"], "miss": []}
-senator_history = {} # ex: "senator": {"yeas": [125], "nays": [62], "miss": []}
+senator_history = {}  # ex: "senator": {"yeas": [125], "nays": [62], "miss": []}
+vote_state_history = {}  # ex: 125: {"TN": "red", "IL": "blue", "PN": "purple" ...}
 vote_senator_table_history = init_table()
 
+def write_to_vote_state_history(vote_num, vote_tupe):
+    state_votes = {}
+    for yea_voter in vote_tupe[0]:
+        if yea_voter == "":
+            continue
+        state = get_state_from_senator(yea_voter)
+        if state not in state_votes:
+            state_votes[state] = 0
+        state_votes[state] += 1
+    for nay_voter in vote_tupe[1]:
+        if nay_voter == "":
+            continue
+        state = get_state_from_senator(nay_voter)
+        if state not in state_votes:
+            state_votes[state] = 0
+        state_votes[state] -= 1
+    for missed_voter in vote_tupe[2]:
+        if missed_voter == "":
+            continue
+        state = get_state_from_senator(missed_voter)
+        if state not in state_votes:
+            state_votes[state] = 0
+
+    color_index = {}
+    for st, count in state_votes.items():
+        color = "purple"
+        if count > 0:
+            color = "blue"
+        if count < 0:
+            color = "red"
+        color_index[st] = color
+
+    vote_state_history[vote_num] = color_index
 
 def write_to_history(vote_num, vote_tupe):
+    write_to_vote_state_history(vote_num, vote_tupe)
     vote_history[vote_num] = {"yeas": vote_tupe[0], "nays": vote_tupe[1], "miss": vote_tupe[2]}
     list_to_append = [""] * 101
     list_to_append[0] = str(vote_num)
@@ -177,15 +216,17 @@ def write_to_history(vote_num, vote_tupe):
             list_to_append[table_map[missed_voter]] = "Not Voting"
     vote_senator_table_history.append(list_to_append)
 
+
 # vote = votes_from_url(url_base + get_vote_ext_from_num(125))
 # write_to_history(125, vote)
 #
 # vote = votes_from_url(url_base + get_vote_ext_from_num(291))
 # write_to_history(291, vote)
 
-# vote = votes_from_url(url_base + get_vote_ext_from_num(315))
-# print_vote("Vote 315:", vote)
+# vote = votes_from_url(url_base + get_vote_ext_from_num(1))
+# print_vote("Vote 1:", vote)
 # write_to_history(315, vote)
+
 
 # [print(l) for l in fetch_page_as_lines(url_base + get_vote_ext_from_num(315))]
 #
@@ -202,9 +243,9 @@ def write_to_history(vote_num, vote_tupe):
 # for i in range(31):
 #     print(",".join(vote_senator_table_history[i]))
 
-from node import SenatorNode
-
-SenateNode = SenatorNode("Senate to voting record", get_senators(), 0)
+# from node import SenatorNode
+#
+# SenateNode = SenatorNode("Senate to voting record", get_senators(), 0)
 #
 # print(SenateNode.get_csv())
 # for i in range(1, 11):
@@ -212,6 +253,17 @@ SenateNode = SenatorNode("Senate to voting record", get_senators(), 0)
 #     SenateNode.add_vote(i, vote)
 #     print(SenateNode.get_csv())
 
+# vote = votes_from_url(url_base + get_vote_ext_from_num(1))
+# SenateNode.add_vote(1, vote)
+# print(SenateNode.get_csv())
+
+# print()
+
 vote = votes_from_url(url_base + get_vote_ext_from_num(1))
-SenateNode.add_vote(1, vote)
-print(SenateNode.get_csv())
+# print_vote("Vote 1:", vote)
+write_to_history(1, vote)
+# print(vote_state_history)
+# print()
+# print(vote_state_history[1])
+# print()
+[print(line) for line in get_state_color_map_from_vote(1)]
