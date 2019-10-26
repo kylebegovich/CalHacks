@@ -18,15 +18,6 @@ def get_vote_ext_from_num(vote_number):
     return "&" + VOTE_STR + "0000" + str(vote_number)
 
 
-# print(get_vote_ext_from_num(-124))
-# print(get_vote_ext_from_num(0))
-# print(get_vote_ext_from_num(1))
-# print(get_vote_ext_from_num(81))
-# print(get_vote_ext_from_num(171))
-# print(get_vote_ext_from_num(325))
-# print(get_vote_ext_from_num(326))
-# print(get_vote_ext_from_num(631782))
-
 def print_lines(lines):
     [print(l) for l in lines]
 
@@ -36,6 +27,26 @@ def print_vote(description, tuple):
         print_lines(t)
         print()
 
+def print_vote_history():
+    for k, v in vote_history.items():
+        print(k)
+        print("yeas")
+        [print(sen) for sen in v["yeas"]]
+        print("nays")
+        [print(sen) for sen in v["nays"]]
+        print("miss")
+        [print(sen) for sen in v["miss"]]
+
+def print_sen_history():
+    for k, v in senator_history.items():
+        print(k)
+        print("yeas")
+        [print(vote) for vote in v["yeas"]]
+        print("nays")
+        [print(vote) for vote in v["nays"]]
+        print("miss")
+        [print(vote) for vote in v["miss"]]
+
 
 def fetch_page_as_lines(url):
     fp = urllib.request.urlopen(url)
@@ -43,20 +54,6 @@ def fetch_page_as_lines(url):
     fp.close()
     lines = my_str.split("\n")
     return lines
-
-
-def filter_feed_old(lines):
-    to_ret = []
-    write_flag = False
-    for l in lines:
-        if "<span class=\"contenttext\">" in l:
-            write_flag = True
-        if write_flag:
-            to_ret.append(l)
-        if "</span>" in l:
-            write_flag = False
-    return to_ret
-
 
 def filter_feed(lines):
     to_ret = []
@@ -67,54 +64,142 @@ def filter_feed(lines):
         last_line = l
     return to_ret
 
-def get_yays(filtered_lines):
-    yays = filtered_lines[0].split("<br>")
-    yays[0] = yays[0][26:]
-    return yays
+def get_yeas(filtered_lines, index):
+    yeas = filtered_lines[index].split("<br>")
+    yeas[0] = yeas[0][26:]
+    return yeas
 
-def get_nays(filtered_lines):
-    nays = filtered_lines[1].split("<br>")
+def get_nays(filtered_lines, index):
+    nays = filtered_lines[index].split("<br>")
     nays[0] = nays[0][26:]
     return nays
 
-def get_miss(filtered_lines):
-    miss = filtered_lines[2].split("<br>")
+def get_miss(filtered_lines, index):
+    miss = filtered_lines[index].split("<br>")
     miss[0] = miss[0][26:]
     return miss
 
+def parse_ynm(lines, filter_lines):
+    is_yeas = False
+    is_nays = False
+    is_miss = False
+    for l in lines:
+        if "YEAs ---" in l:
+            is_yeas = True
+        if "NAYs ---" in l:
+            is_nays = True
+        if "Not Voting -" in l:
+            is_miss = True
+    yeas = []
+    nays = []
+    miss = []
+    if is_yeas:
+        yeas = get_yeas(filter_lines, 0)
+        if is_nays:
+            nays = get_nays(filter_lines, 1)
+        else:
+            if is_miss:
+                miss = get_miss(filter_lines, 1)
+    else:
+        if is_nays:
+            nays = get_nays(filter_lines, 0)
+            if is_miss:
+                miss = get_miss(filter_lines, 1)
+        else:
+            if is_miss:
+                miss = get_miss(filter_lines, 0)
+    return yeas, nays, miss
 
 def votes_from_url(url):
     lines = fetch_page_as_lines(url)
     filter_lines = filter_feed(lines)
-    yays = get_yays(filter_lines)
-    nays = get_nays(filter_lines)
-    miss = get_miss(filter_lines)
-    return yays, nays, miss
+    if len(filter_lines) == 3:
+        yeas = get_yeas(filter_lines, 0)
+        nays = get_nays(filter_lines, 1)
+        miss = get_miss(filter_lines, 2)
+        return yeas, nays, miss
+    return parse_ynm(lines, filter_lines)
 
-vote_history = {0: {"yays": [], "nays": [], "miss": []}}
-senator_history = {"senator": {"yays": [0], "nays": [], "miss": []}}
+def get_senators():
+    y, n, m = votes_from_url(url_example)
+    senators = []
+    for sen in y:
+        senators.append(sen)
+    for sen in n:
+        senators.append(sen)
+    for sen in m:
+        senators.append(sen)
+    senators = sorted(list(set(senators)))
+    return senators[1:]
+
+
+table_map = {}
+
+def init_table():
+    senators = get_senators()
+    index = 1
+    for sen in senators:
+        table_map[sen] = index
+        index += 1
+
+    table_header = ["Vote Number"]
+    [table_header.append(sen) for sen in senators]
+    return [table_header]
+
+
+vote_history = {}  # ex: 125: {"yeas": ["sen1"], "nays": ["sen2"], "miss": []}
+senator_history = {} # ex: "senator": {"yeas": [125], "nays": [62], "miss": []}
+vote_senator_table_history = init_table()
+
+
 def write_to_history(vote_num, vote_tupe):
-    vote_history[vote_num] = {"yays": vote_tupe[0], "nays": vote_tupe[1], "miss": vote_tupe[2]}
-    for yay_voter in vote_tupe[0]:
-        if yay_voter not in senator_history:
-            senator_history[yay_voter] = {"yays": [], "nays": [], "miss": []}
-        senator_history[yay_voter]["yays"].append(vote_num)
+    vote_history[vote_num] = {"yeas": vote_tupe[0], "nays": vote_tupe[1], "miss": vote_tupe[2]}
+    list_to_append = [""] * 101
+    list_to_append[0] = str(vote_num)
+    for yea_voter in vote_tupe[0]:
+        if yea_voter not in senator_history:
+            senator_history[yea_voter] = {"yeas": [], "nays": [], "miss": []}
+        if yea_voter != "":
+            senator_history[yea_voter]["yeas"].append(vote_num)
+            list_to_append[table_map[yea_voter]] = "YEA"
     for nay_voter in vote_tupe[1]:
         if nay_voter not in senator_history:
-            senator_history[nay_voter] = {"yays": [], "nays": [], "miss": []}
-        senator_history[nay_voter]["nays"].append(vote_num)
+            senator_history[nay_voter] = {"yeas": [], "nays": [], "miss": []}
+        if nay_voter != "":
+            senator_history[nay_voter]["nays"].append(vote_num)
+            list_to_append[table_map[nay_voter]] = "NAY"
     for missed_voter in vote_tupe[2]:
         if missed_voter not in senator_history:
-            senator_history[missed_voter] = {"yays": [], "nays": [], "miss": []}
-        senator_history[missed_voter]["miss"].append(vote_num)
+            senator_history[missed_voter] = {"yeas": [], "nays": [], "miss": []}
+        if missed_voter != "":
+            senator_history[missed_voter]["miss"].append(vote_num)
+            list_to_append[table_map[missed_voter]] = "Not Voting"
+    vote_senator_table_history.append(list_to_append)
 
-print(vote_history)
-vote = votes_from_url(url_base + get_vote_ext_from_num(125))
-# print_vote("Vote 125:", vote)
-write_to_history(125, vote)
-print(vote_history)
+# vote = votes_from_url(url_base + get_vote_ext_from_num(125))
+# write_to_history(125, vote)
+#
+# vote = votes_from_url(url_base + get_vote_ext_from_num(291))
+# write_to_history(291, vote)
 
-vote = votes_from_url(url_base + get_vote_ext_from_num(291))
-# print_vote("Vote 291:", vote)
-write_to_history(291, vote)
-print(vote_history)
+# vote = votes_from_url(url_base + get_vote_ext_from_num(315))
+# print_vote("Vote 315:", vote)
+# write_to_history(315, vote)
+
+# [print(l) for l in fetch_page_as_lines(url_base + get_vote_ext_from_num(315))]
+#
+
+# # print_vote_history()
+# # print()
+# # print()
+# # print_sen_history()
+# print_sen_history_csv()
+
+# [print(l) for l in vote_senator_table_history]
+
+for i in range(1, 31):
+    vote = votes_from_url(url_base + get_vote_ext_from_num(i))
+    write_to_history(i, vote)
+
+for i in range(31):
+    print(",".join(vote_senator_table_history[i]))
