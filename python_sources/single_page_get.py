@@ -48,7 +48,7 @@ def print_sen_history():
         [print(vote) for vote in v["miss"]]
 
 def get_state_color_map_from_vote(vote_num):
-    return [(k + "," + v) for k, v in vote_state_history[vote_num].items()]
+    return [(str(k) + "," + str(v)) for k, v in vote_state_history[vote_num].items()]
 
 def fetch_page_as_lines(url):
     fp = urllib.request.urlopen(url)
@@ -164,32 +164,23 @@ def write_to_vote_state_history(vote_num, vote_tupe):
             continue
         state = get_state_from_senator(yea_voter)
         if state not in state_votes:
-            state_votes[state] = 0
+            state_votes[state] = 2
         state_votes[state] += 1
     for nay_voter in vote_tupe[1]:
         if nay_voter == "":
             continue
         state = get_state_from_senator(nay_voter)
         if state not in state_votes:
-            state_votes[state] = 0
+            state_votes[state] = 2
         state_votes[state] -= 1
     for missed_voter in vote_tupe[2]:
         if missed_voter == "":
             continue
         state = get_state_from_senator(missed_voter)
         if state not in state_votes:
-            state_votes[state] = 0
+            state_votes[state] = 2
 
-    color_index = {}
-    for st, count in state_votes.items():
-        color = "purple"
-        if count > 0:
-            color = "blue"
-        if count < 0:
-            color = "red"
-        color_index[st] = color
-
-    vote_state_history[vote_num] = color_index
+    vote_state_history[vote_num] = state_votes
 
 def write_to_history(vote_num, vote_tupe):
     write_to_vote_state_history(vote_num, vote_tupe)
