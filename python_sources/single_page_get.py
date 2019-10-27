@@ -123,6 +123,36 @@ def votes_from_url(url):
     filter_lines = filter_feed(lines)
     return parse_ynm(lines, filter_lines)
 
+
+# CONSERVATIVE_VOTERS = ["Inhofe (R-OK)", "Cruz (R-TX)", "Graham (R-SC)",  "McConnell (R-KY)", "Romney (R-UT)"]
+# LIBERAL_VOTERS = ["Gillibrand (D-NY)", "Schumer (D-NY)", "Harris (D-CA)", "Sanders (I-VT)"]
+LIB = "Liberal Vote"
+CON = "Conservative Vote"
+BIP = "Bipartisan Vote"
+def vote_party(vote_tupe):
+    conserv_score = 0
+    # for yay_vote in vote_tupe[0]:
+    #     if any([yay_vote == conserv for conserv in CONSERVATIVE_VOTERS]):
+    #         conserv_score += 1
+    #     if any([yay_vote == lib for lib in LIBERAL_VOTERS]):
+    #         conserv_score -= 1
+    for yea_vote in vote_tupe[0]:
+        if "(R-" in yea_vote:
+            conserv_score += 1
+        else:
+            conserv_score -= 1
+    for nay in vote_tupe[0]:
+        if "(R-" in yay_vote:
+            conserv_score -= 1
+        else:
+            conserv_score += 1
+    if conserv_score < -10:
+        return LIB
+    if conserv_score > 10:
+        return CON
+    return BIP
+
+
 def get_senators():
     y, n, m = votes_from_url(url_example)
     senators = []
@@ -160,20 +190,21 @@ vote_senator_table_history = init_table()
 
 def write_to_vote_state_history(vote_num, vote_tupe):
     state_votes = {}
+    is_conv = vote_party(vote_tupe) == CON
     for yea_voter in vote_tupe[0]:
         if yea_voter == "":
             continue
         state = get_state_from_senator(yea_voter)
         if state not in state_votes:
             state_votes[state] = float(2)
-        state_votes[state] += 1
+        state_votes[state] += (1 if is_conv else -1)
     for nay_voter in vote_tupe[1]:
         if nay_voter == "":
             continue
         state = get_state_from_senator(nay_voter)
         if state not in state_votes:
             state_votes[state] = float(2)
-        state_votes[state] -= 1
+        state_votes[state] -= (1 if is_conv else -1)
     for missed_voter in vote_tupe[2]:
         if missed_voter == "":
             continue
@@ -258,14 +289,16 @@ def write_to_file(file_name, file_contents):
 
 # print_vote("Vote 1:", vote)
 
-file_prefix = "../csvs/vote_"
-file_suffix = "_colors.csv"
+# file_prefix = "../csvs/vote_"
+# file_suffix = "_colors.csv"
+#
+# for i in range(31, 51):
+#     file_name = file_prefix + str(i) + file_suffix
+#
+#     vote = votes_from_url(url_base + get_vote_ext_from_num(i))
+#     write_to_history(i, vote)
+#     output = "state,color\n" + "\n".join(get_state_color_map_from_vote(i))
+#
+#     write_to_file(file_name, output)
 
-for i in range(31, 51):
-    file_name = file_prefix + str(i) + file_suffix
-
-    vote = votes_from_url(url_base + get_vote_ext_from_num(i))
-    write_to_history(i, vote)
-    output = "state,color\n" + "\n".join(get_state_color_map_from_vote(i))
-
-    write_to_file(file_name, output)
+[print(s) for s in get_senators()]
